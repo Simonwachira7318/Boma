@@ -444,10 +444,10 @@ const LandingPage = () => {
                   alt="Boma Properties Ltd" 
                   className="h-8 w-auto"
                 />
-                <span className="font-semibold">Boma Properties Ltd</span>
+                {/* <span className="font-semibold">Boma Properties Ltd</span> */}
               </motion.div>
               <div className="text-center md:text-right text-muted-foreground">
-                <p>&copy; 2024 Boma Properties Ltd. All rights reserved.</p>
+                <p>&copy; 2025 Boma Properties Ltd. All rights reserved.</p>
               </div>
             </div>
           </div>
