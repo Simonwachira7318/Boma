@@ -1,0 +1,196 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  LANDLORD
+  ADMIN
+  TENANT
+}
+
+enum PropertyType {
+  APARTMENT
+  HOUSE
+  VILLA
+  STUDIO
+  COMMERCIAL
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  PARTIAL
+}
+
+enum LeaseStatus {
+  ACTIVE
+  EXPIRED
+  TERMINATED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  firstName     String
+  lastName      String
+  phone         String?
+  address       String?
+  password      String
+  role          UserRole  @default(LANDLORD)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  properties    Property[]
+  payments      Payment[]
+  leases        Lease[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model Property {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  address     String
+  city        String
+  country     String
+  postalCode  String?
+  type        PropertyType
+  rentAmount  Float
+  deposit     Float?
+  isAvailable Boolean       @default(true)
+  isAirbnb    Boolean       @default(false)
+  bedrooms    Int?
+  bathrooms   Int?
+  area        Float?        // in square meters
+  amenities   String?       // JSON array of amenities
+  images      String?       // JSON array of image URLs
+  landlordId  String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  landlord    User          @relation(fields: [landlordId], references: [id], onDelete: Cascade)
+  leases      Lease[]
+  payments    Payment[]
+  maintenance Maintenance[]
+
+  @@map("properties")
+}
+
+model Tenant {
+  id          String   @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String   @unique
+  phone       String?
+  idNumber    String?  // National ID or passport number
+  emergencyContact String?
+  emergencyPhone String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  leases      Lease[]
+  payments    Payment[]
+
+  @@map("tenants")
+}
+
+model Lease {
+  id          String      @id @default(cuid())
+  startDate   DateTime
+  endDate     DateTime
+  monthlyRent Float
+  deposit     Float?
+  status      LeaseStatus @default(ACTIVE)
+  terms       String?
+  propertyId  String
+  tenantId    String
+  landlordId  String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  property    Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  landlord    User        @relation(fields: [landlordId], references: [id], onDelete: Cascade)
+  payments    Payment[]
+
+  @@map("leases")
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  amount        Float
+  dueDate       DateTime
+  paidDate      DateTime?
+  status        PaymentStatus @default(PENDING)
+  paymentMethod String?       // CASH, BANK_TRANSFER, MOBILE_MONEY, etc.
+  transactionId String?       // External transaction reference
+  notes         String?
+  penaltyAmount Float         @default(0)
+  leaseId       String
+  tenantId      String
+  landlordId    String
+  propertyId    String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relations
+  lease         Lease         @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  landlord      User          @relation(fields: [landlordId], references: [id], onDelete: Cascade)
+  property      Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Maintenance {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  status      String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  cost        Float?
+  assignedTo  String?
+  completedAt DateTime?
+  propertyId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("maintenance")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  type      String   // PAYMENT_REMINDER, MAINTENANCE, LEASE_RENEWAL, etc.
+  isRead    Boolean  @default(false)
+  userId    String
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
