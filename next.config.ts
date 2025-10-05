@@ -2,22 +2,23 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  outputFileTracingRoot: __dirname,
   typescript: {
     ignoreBuildErrors: true,
   },
-  // 禁用 Next.js 热重载，由 nodemon 处理重编译
+  // Disable Next.js Hot Reloading, handled by nodemon for re-compilation
   reactStrictMode: false,
   webpack: (config, { dev }) => {
     if (dev) {
-      // 禁用 webpack 的热模块替换
+      // Disable webpack's Hot Module Replacement (HMR)
       config.watchOptions = {
-        ignored: ['**/*'], // 忽略所有文件变化
+        ignored: ['**/*'], // Ignore all file changes
       };
     }
     return config;
   },
   eslint: {
-    // 构建时忽略ESLint错误
+    // Ignore ESLint errors during build
     ignoreDuringBuilds: true,
   },
 };
